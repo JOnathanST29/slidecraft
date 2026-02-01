@@ -38,5 +38,5 @@ export {
 export { renderPresentation } from './renderer/index.js'
 
 // LLM utilities (for advanced usage)
-export { createLLMClient } from './llm/index.js'
+export { createLLMClient, PROVIDER_PRESETS } from './llm/index.js'
 export type { LLMClient, LLMGenerateRequest } from './llm/types.js'

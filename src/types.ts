@@ -1,6 +1,16 @@
 // ─── LLM Configuration ───
 
-export type LLMProvider = 'openai' | 'anthropic'
+export type LLMProvider =
+  | 'openai'
+  | 'anthropic'
+  | 'gemini'
+  | 'mistral'
+  | 'groq'
+  | 'deepseek'
+  | 'together'
+  | 'perplexity'
+  | 'xai'
+  | 'cohere'
 
 export interface LLMConfig {
   /** LLM provider to use */

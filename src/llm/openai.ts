@@ -9,7 +9,7 @@ export function createOpenAIClient(config: LLMConfig): LLMClient {
     ...(config.baseURL ? { baseURL: config.baseURL } : {}),
   })
 
-  const model = config.model ?? 'gpt-4o'
+  const model = config.model ?? 'gpt-4o' // overridden by provider preset in createLLMClient
   const temperature = config.temperature ?? 0.7
 
   return {
