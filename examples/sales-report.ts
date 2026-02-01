@@ -1,5 +1,5 @@
 /**
- * Sales Report example with charts
+ * Sales Report — Level 3 with per-slide control + charts
  *
  * Run: npx tsx examples/sales-report.ts
  * Requires: OPENAI_API_KEY environment variable
@@ -7,12 +7,15 @@
 import { SlideCraft } from '../src/index.js'
 
 async function main() {
+  const apiKey = process.env.OPENAI_API_KEY
+  if (!apiKey) {
+    console.log('⚠️  Set OPENAI_API_KEY to run this example')
+    return
+  }
+
   const sc = new SlideCraft({
-    llm: {
-      provider: 'openai',
-      apiKey: process.env.OPENAI_API_KEY!,
-    },
-    language: 'es', // Spanish output
+    llm: { provider: 'openai', apiKey },
+    language: 'es',
   })
 
   const salesData = {
@@ -44,19 +47,27 @@ async function main() {
     ],
   }
 
-  console.log('📊 Generating sales report...')
+  console.log('📊 Generating sales report (Level 3 — per-slide specs)...')
 
   const pptx = await sc.generate({
     data: salesData,
     template: 'sales-report',
-    instructions: 'Genera un reporte de ventas ejecutivo para Q4 2025. Incluye análisis de rendimiento por rep, pipeline, tendencias mensuales, y productos top. Destaca que el equipo superó la cuota.',
-    maxSlides: 10,
+    slides: [
+      { title: 'Reporte de Ventas Q4 2025', layout: 'title', instructions: 'Incluye nombre del equipo como subtítulo' },
+      { title: 'Resumen Ejecutivo', layout: 'title-content', instructions: 'KPIs principales: revenue total, quota attainment, win rate, avg deal size' },
+      { title: 'Rendimiento por Rep', layout: 'table', dataKey: 'reps', instructions: 'Tabla con nombre, deals, revenue, quota, y % de cumplimiento' },
+      { title: 'Revenue Mensual', layout: 'chart', chartType: 'bar', dataKey: 'monthlyRevenue', instructions: 'Comparar actual vs target por mes' },
+      { title: 'Pipeline por Etapa', layout: 'chart', chartType: 'bar', dataKey: 'pipeline' },
+      { title: 'Productos Top', layout: 'chart', chartType: 'pie', dataKey: 'topProducts', instructions: 'Distribución de revenue por producto' },
+      { title: 'Conclusiones y Próximos Pasos', layout: 'title-content', instructions: 'Analiza los datos y sugiere 3-4 acciones concretas para Q1' },
+      { title: 'Gracias', layout: 'closing' },
+    ],
+    instructions: 'Genera un reporte de ventas profesional. El equipo superó la cuota — resáltalo.',
   })
 
   await pptx.save('sales-report.pptx')
   console.log('✅ Saved to sales-report.pptx')
 
-  // Log the structure the LLM generated
   console.log('\n📋 Slide structure:')
   pptx.structure.slides.forEach((slide, i) => {
     console.log(`  ${i + 1}. [${slide.layout}] ${slide.title}`)

@@ -24,18 +24,82 @@ const sc = new SlideCraft({
 })
 
 const pptx = await sc.generate({
-  data: {
-    company: 'Acme Corp',
-    revenue: 2_400_000,
-    highlights: ['Launched 3 products', 'Grew team to 85 people']
-  },
-  template: 'general',
-  instructions: 'Create a quarterly business review for leadership'
+  data: { company: 'Acme', revenue: 2_400_000 },
+  instructions: 'Quarterly business review for leadership'
 })
 
 await pptx.save('report.pptx')
 // or
 const buffer = await pptx.toBuffer()
+```
+
+## 4 Levels of Control
+
+SlideCraft's `.generate()` method supports 4 levels of control, from fully automatic to fully manual:
+
+### Level 1 — LLM decides everything
+
+Pass your data and instructions. The LLM decides how many slides, what layouts, and all content.
+
+```typescript
+const pptx = await sc.generate({
+  data: salesJson,
+  instructions: 'Resumen Q4 para directivos'
+})
+```
+
+### Level 2 — Fixed slide count, LLM fills content
+
+You set the exact number of slides. The LLM generates that many.
+
+```typescript
+const pptx = await sc.generate({
+  data: salesJson,
+  slides: 8,
+  instructions: 'Enfócate en crecimiento'
+})
+```
+
+### Level 3 — User defines each slide
+
+You define every slide's blueprint (title, layout, chart type, data key, per-slide instructions). The LLM generates the actual content for each one.
+
+```typescript
+const pptx = await sc.generate({
+  data: salesJson,
+  slides: [
+    { title: 'Resumen Ejecutivo', layout: 'title', instructions: 'KPIs principales' },
+    { title: 'Ventas por Región', layout: 'chart', chartType: 'bar', dataKey: 'sales_by_region' },
+    { title: 'Top Clientes', layout: 'table', dataKey: 'top_clients' },
+    { title: 'Proyección Q1', instructions: 'Genera forecast basado en tendencia' }
+  ]
+})
+```
+
+**SlideSpec fields** (all optional):
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | `string` | Slide title (LLM generates one if omitted) |
+| `layout` | `SlideLayout` | Preferred layout |
+| `chartType` | `ChartType` | Chart type when layout is `'chart'` |
+| `dataKey` | `string` | Key path into data to use for this slide |
+| `instructions` | `string` | Per-slide instructions for the LLM |
+| `content` | `string[]` | Direct content (used in Level 4) |
+
+### Level 4 — No LLM, direct render
+
+No LLM call at all. You provide everything, SlideCraft just renders the `.pptx`.
+
+```typescript
+const pptx = await sc.generate({
+  slides: [
+    { title: 'Revenue', content: ['$2.5M revenue', '+23% YoY'], layout: 'bullets' },
+    { title: 'Team', content: ['85 employees', '5 new markets'], layout: 'bullets' },
+    { title: 'Thank You', layout: 'closing' }
+  ],
+  llm: false
+})
 ```
 
 ## Configuration
@@ -76,13 +140,14 @@ const sc = new SlideCraft({
 ## Generate Options
 
 ```typescript
-const pptx = await sc.generate({
-  data: myData,                // Any JSON-serializable data
-  template: 'sales-report',   // Template name or custom TemplateConfig
-  instructions: '...',        // Natural language instructions
-  language: 'es',             // Optional: override language
-  maxSlides: 10,              // Optional: max slides
-})
+interface GenerateOptions {
+  data?: unknown                      // Input data (required for levels 1-3)
+  template?: string | TemplateConfig  // Template name or custom config
+  slides?: number | SlideSpec[]       // Level 2: count, Level 3: specs
+  instructions?: string               // Natural language instructions
+  language?: string                   // Override language
+  llm?: false                         // Set to false for Level 4
+}
 ```
 
 ## Built-in Templates
@@ -117,51 +182,51 @@ const myTemplate: TemplateConfig = {
 
 registerTemplate('brand', myTemplate)
 
-// Use it
-const pptx = await sc.generate({ data, template: 'brand', instructions: '...' })
+// Use by name
+await sc.generate({ data, template: 'brand', instructions: '...' })
 
 // Or pass inline
-const pptx = await sc.generate({ data, template: myTemplate, instructions: '...' })
+await sc.generate({ data, template: myTemplate, instructions: '...' })
 ```
 
 ## Slide Layouts
-
-The LLM can use these layouts:
 
 | Layout | Description |
 |--------|-------------|
 | `title` | Title slide with big title + subtitle |
 | `title-content` | Title bar + bullets or body text |
+| `bullets` | Alias for `title-content` — bullet list |
 | `two-column` | Title + two columns (comparisons) |
 | `section-header` | Section divider |
 | `chart` | Title + chart (bar, line, pie, doughnut) |
+| `table` | Title + data table (headers + rows) |
 | `closing` | Closing slide (thank you / Q&A) |
 | `blank` | Empty slide |
 
 ## Chart Support
 
-When your data contains numeric series, the LLM can generate charts:
+When your data contains numeric series, the LLM can generate charts. In Level 3, you can specify the chart type per slide:
 
 ```typescript
-// The LLM will detect numeric data and use chart layouts
-const pptx = await sc.generate({
-  data: {
-    monthly: {
-      months: ['Jan', 'Feb', 'Mar'],
-      revenue: [100000, 120000, 150000],
-      costs: [80000, 85000, 90000],
-    }
-  },
-  template: 'sales-report', // preferCharts: true
-  instructions: 'Show revenue vs costs trend',
-})
+{ title: 'Revenue Trend', layout: 'chart', chartType: 'line', dataKey: 'monthly_revenue' }
 ```
 
-Supported chart types: `bar`, `line`, `pie`, `doughnut`.
+Supported: `bar`, `line`, `pie`, `doughnut`.
+
+## Table Support
+
+For tabular data (rankings, comparisons), use the `table` layout:
+
+```typescript
+// Level 3 — LLM generates the table from your data
+{ title: 'Top Clients', layout: 'table', dataKey: 'clients' }
+
+// Level 4 — You provide the table directly (via renderPresentation)
+```
 
 ## Advanced: Direct Rendering
 
-Skip the LLM and render from your own structure:
+Skip SlideCraft entirely and render from your own structure:
 
 ```typescript
 import { renderPresentation, getTemplate, type PresentationStructure } from 'slidecraft'
@@ -178,6 +243,14 @@ const structure: PresentationStructure = {
         { text: 'Second point', bold: true },
       ],
     },
+    {
+      title: 'Data',
+      layout: 'table',
+      table: {
+        headers: ['Metric', 'Value'],
+        rows: [['Revenue', '$2.5M'], ['Growth', '+23%']],
+      },
+    },
     { title: 'Thank You', layout: 'closing' },
   ],
 }
@@ -188,13 +261,11 @@ await result.save('manual.pptx')
 
 ## Output
 
-The `.generate()` method returns a `GenerationResult`:
-
 ```typescript
 interface GenerationResult {
   save(filePath: string): Promise<void>    // Save to file
   toBuffer(): Promise<Buffer>              // Get as buffer
-  structure: PresentationStructure         // The LLM-generated structure
+  structure: PresentationStructure         // The slide structure
 }
 ```
 

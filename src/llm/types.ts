@@ -1,4 +1,4 @@
-import type { LLMConfig, PresentationStructure, TemplateConfig } from '../types.js'
+import type { LLMConfig, PresentationStructure, SlideSpec, TemplateConfig } from '../types.js'
 
 export interface LLMGenerateRequest {
   data: unknown
@@ -6,6 +6,10 @@ export interface LLMGenerateRequest {
   instructions: string
   language: string
   maxSlides?: number
+  /** Level 2: exact slide count */
+  slideCount?: number
+  /** Level 3: per-slide specs */
+  slideSpecs?: SlideSpec[]
 }
 
 export interface LLMClient {

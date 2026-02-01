@@ -155,4 +155,46 @@ describe('Renderer', () => {
     const buffer = await result.toBuffer()
     expect(buffer.length).toBeGreaterThan(0)
   })
+
+  it('should handle "bullets" layout alias', async () => {
+    const structure: PresentationStructure = {
+      title: 'Test',
+      slides: [
+        {
+          title: 'Quick Points',
+          layout: 'bullets',
+          bullets: [
+            { text: 'Item A' },
+            { text: 'Item B' },
+          ],
+        },
+      ],
+    }
+    const result = renderPresentation(structure, generalTemplate)
+    const buffer = await result.toBuffer()
+    expect(buffer.length).toBeGreaterThan(0)
+  })
+
+  it('should handle table layout', async () => {
+    const structure: PresentationStructure = {
+      title: 'Test',
+      slides: [
+        {
+          title: 'Top Clients',
+          layout: 'table',
+          table: {
+            headers: ['Client', 'Revenue', 'Deals'],
+            rows: [
+              ['Acme Corp', '$500K', '12'],
+              ['Globex', '$320K', '8'],
+              ['Initech', '$280K', '6'],
+            ],
+          },
+        },
+      ],
+    }
+    const result = renderPresentation(structure, generalTemplate)
+    const buffer = await result.toBuffer()
+    expect(buffer.length).toBeGreaterThan(0)
+  })
 })

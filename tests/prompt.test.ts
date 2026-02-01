@@ -58,4 +58,38 @@ describe('LLM Prompt Builder', () => {
     expect(prompt).toContain('"layout"')
     expect(prompt).toContain('"bullets"')
   })
+
+  // ── Level 2: slideCount ──
+
+  it('should enforce exact slide count for level 2', () => {
+    const prompt = buildSystemPrompt({ ...baseRequest, slideCount: 5 })
+    expect(prompt).toContain('EXACTLY 5 slides')
+  })
+
+  // ── Level 3: slideSpecs ──
+
+  it('should include slide blueprint for level 3', () => {
+    const prompt = buildSystemPrompt({
+      ...baseRequest,
+      slideSpecs: [
+        { title: 'Intro', layout: 'title' },
+        { title: 'Revenue', layout: 'chart', chartType: 'bar', dataKey: 'revenue' },
+        { instructions: 'Summarize key points' },
+      ],
+    })
+    expect(prompt).toContain('EXACTLY 3 slides')
+    expect(prompt).toContain('Slide 1:')
+    expect(prompt).toContain('title: "Intro"')
+    expect(prompt).toContain('layout: chart')
+    expect(prompt).toContain('chartType: bar')
+    expect(prompt).toContain('dataKey: "revenue"')
+    expect(prompt).toContain('Summarize key points')
+  })
+
+  it('should include table in schema reference', () => {
+    const prompt = buildSystemPrompt(baseRequest)
+    expect(prompt).toContain('"table"')
+    expect(prompt).toContain('"headers"')
+    expect(prompt).toContain('"rows"')
+  })
 })

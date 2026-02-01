@@ -7,6 +7,7 @@ import type {
   PresentationStructure,
   SlideColumnContent,
   SlideDefinition,
+  TableConfig,
   TemplateConfig,
 } from '../types.js'
 
@@ -330,6 +331,91 @@ function renderChart(
   if (slide.notes) s.addNotes(slide.notes)
 }
 
+function renderTable(
+  pptx: PptxGenJS,
+  slide: SlideDefinition,
+  template: TemplateConfig,
+): void {
+  const s = pptx.addSlide()
+
+  // Title bar
+  s.addShape('rect' as PptxGenJS.SHAPE_NAME, {
+    x: 0,
+    y: 0,
+    w: 10,
+    h: 1.2,
+    fill: { color: hexToRgb(template.colors.primary) },
+  })
+
+  s.addText(slide.title, {
+    x: 0.5,
+    y: 0.1,
+    w: 9,
+    h: 1,
+    fontSize: 24,
+    fontFace: template.fonts.title,
+    color: 'FFFFFF',
+    bold: true,
+    valign: 'middle',
+  })
+
+  if (slide.table) {
+    const { headers, rows } = slide.table
+
+    // Build table rows: header row + data rows
+    const tableRows: PptxGenJS.TableRow[] = []
+
+    // Header row
+    tableRows.push(
+      headers.map((h) => ({
+        text: h,
+        options: {
+          bold: true,
+          fontSize: 13,
+          fontFace: template.fonts.title,
+          color: 'FFFFFF',
+          fill: { color: hexToRgb(template.colors.primary) },
+          align: 'center' as PptxGenJS.HAlign,
+          valign: 'middle' as PptxGenJS.VAlign,
+          border: { type: 'solid' as const, pt: 0.5, color: hexToRgb(template.colors.lightText) },
+        },
+      }))
+    )
+
+    // Data rows with alternating colors
+    rows.forEach((row, idx) => {
+      tableRows.push(
+        row.map((cell) => ({
+          text: cell,
+          options: {
+            fontSize: 12,
+            fontFace: template.fonts.body,
+            color: hexToRgb(template.colors.text),
+            fill: { color: idx % 2 === 0 ? 'F7F9FC' : 'FFFFFF' },
+            align: 'left' as PptxGenJS.HAlign,
+            valign: 'middle' as PptxGenJS.VAlign,
+            border: { type: 'solid' as const, pt: 0.5, color: 'E0E0E0' },
+          },
+        }))
+      )
+    })
+
+    // Calculate column widths (equal distribution)
+    const colW = headers.map(() => 9 / headers.length)
+
+    s.addTable(tableRows, {
+      x: 0.5,
+      y: 1.5,
+      w: 9,
+      colW,
+      rowH: 0.45,
+      autoPage: false,
+    })
+  }
+
+  if (slide.notes) s.addNotes(slide.notes)
+}
+
 function renderClosing(
   pptx: PptxGenJS,
   slide: SlideDefinition,
@@ -398,6 +484,7 @@ export function renderPresentation(
         renderSectionHeader(pptx, slide, template)
         break
       case 'title-content':
+      case 'bullets':
         renderTitleContent(pptx, slide, template)
         break
       case 'two-column':
@@ -406,6 +493,9 @@ export function renderPresentation(
       case 'chart':
         renderChart(pptx, slide, template)
         break
+      case 'table':
+        renderTable(pptx, slide, template)
+        break
       case 'closing':
         renderClosing(pptx, slide, template)
         break
@@ -413,7 +503,6 @@ export function renderPresentation(
         renderBlank(pptx, slide, template)
         break
       case 'image-text':
-        // Fallback to title-content for now
         renderTitleContent(pptx, slide, template)
         break
       default:

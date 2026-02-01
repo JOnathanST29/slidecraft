@@ -1,19 +1,15 @@
-import OpenAI from 'openai'
+import Anthropic from '@anthropic-ai/sdk'
 import type { LLMConfig, PresentationStructure } from '../types.js'
 import type { LLMClient, LLMGenerateRequest } from './types.js'
 import { buildSystemPrompt, buildUserPrompt } from './prompt.js'
 
 /**
- * Anthropic client using the OpenAI-compatible API.
- * Requires setting baseURL to Anthropic's OpenAI-compatible endpoint.
+ * Anthropic client using the native Anthropic SDK.
  */
 export function createAnthropicClient(config: LLMConfig): LLMClient {
-  const client = new OpenAI({
+  const client = new Anthropic({
     apiKey: config.apiKey,
-    baseURL: config.baseURL ?? 'https://api.anthropic.com/v1/',
-    defaultHeaders: {
-      'anthropic-version': '2023-06-01',
-    },
+    ...(config.baseURL ? { baseURL: config.baseURL } : {}),
   })
 
   const model = config.model ?? 'claude-sonnet-4-20250514'
@@ -21,12 +17,12 @@ export function createAnthropicClient(config: LLMConfig): LLMClient {
 
   return {
     async generate(request: LLMGenerateRequest): Promise<PresentationStructure> {
-      const response = await client.chat.completions.create({
+      const response = await client.messages.create({
         model,
-        temperature,
         max_tokens: 8192,
+        temperature,
+        system: buildSystemPrompt(request),
         messages: [
-          { role: 'system', content: buildSystemPrompt(request) },
           {
             role: 'user',
             content: buildUserPrompt(request) +
@@ -35,10 +31,12 @@ export function createAnthropicClient(config: LLMConfig): LLMClient {
         ],
       })
 
-      const content = response.choices[0]?.message?.content
-      if (!content) {
-        throw new Error('SlideCraft: LLM returned empty response')
+      const textBlock = response.content.find((block) => block.type === 'text')
+      if (!textBlock || textBlock.type !== 'text') {
+        throw new Error('SlideCraft: Anthropic returned no text content')
       }
+
+      const content = textBlock.text
 
       // Strip potential markdown code fences
       const cleaned = content.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '').trim()
