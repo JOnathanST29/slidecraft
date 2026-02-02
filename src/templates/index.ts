@@ -2,11 +2,17 @@ import type { TemplateConfig } from '../types.js'
 import { generalTemplate } from './general.js'
 import { salesReportTemplate } from './sales-report.js'
 import { executiveTemplate } from './executive.js'
+import { modernTemplate } from './modern.js'
+import { corporateTemplate } from './corporate.js'
+import { minimalTemplate } from './minimal.js'
 
 const templates: Record<string, TemplateConfig> = {
   general: generalTemplate,
   'sales-report': salesReportTemplate,
   executive: executiveTemplate,
+  modern: modernTemplate,
+  corporate: corporateTemplate,
+  minimal: minimalTemplate,
 }
 
 export function getTemplate(name: string): TemplateConfig {
@@ -26,4 +32,11 @@ export function registerTemplate(name: string, config: TemplateConfig): void {
   templates[name] = config
 }
 
-export { generalTemplate, salesReportTemplate, executiveTemplate }
+export {
+  generalTemplate,
+  salesReportTemplate,
+  executiveTemplate,
+  modernTemplate,
+  corporateTemplate,
+  minimalTemplate,
+}

@@ -10,6 +10,7 @@ import type {
 import { createLLMClient, type LLMClient } from './llm/index.js'
 import { getTemplate } from './templates/index.js'
 import { renderPresentation } from './renderer/index.js'
+import { validateGenerateOptions } from './validation.js'
 
 export class SlideCraft {
   private llmClient: LLMClient
@@ -30,6 +31,9 @@ export class SlideCraft {
    * - Level 4: No LLM, direct render           → { slides: [...], llm: false }
    */
   async generate(options: GenerateOptions): Promise<GenerationResult> {
+    // Validate input before doing anything
+    validateGenerateOptions(options)
+
     const template = this.resolveTemplate(options.template)
     const language = options.language ?? this.config.language ?? 'en'
 

@@ -1,12 +1,30 @@
-# SlideCraft 🎨
+<p align="center">
+  <h1 align="center">SlideCraft 🎨</h1>
+  <p align="center">
+    <strong>TypeScript SDK to generate PowerPoint presentations using LLMs</strong>
+  </p>
+  <p align="center">
+    <a href="https://www.npmjs.com/package/slidecraft"><img src="https://img.shields.io/npm/v/slidecraft?color=blue&label=npm" alt="npm version"></a>
+    <a href="https://github.com/jonathanst29/slidecraft/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License"></a>
+    <img src="https://img.shields.io/badge/types-TypeScript-blue" alt="TypeScript">
+    <img src="https://img.shields.io/badge/LLM_providers-10-purple" alt="10 LLM providers">
+  </p>
+</p>
 
-TypeScript SDK to generate PowerPoint (.pptx) presentations using LLMs.
-
-Feed your data + instructions → SlideCraft sends it to an LLM to design the slide structure → renders a polished `.pptx` file using [pptxgenjs](https://github.com/gitbrent/PptxGenJS).
+Feed your data + instructions → SlideCraft sends it to any LLM → renders a polished `.pptx` file.
 
 ```
-[JSON data] → [Template engine] → [LLM (structure + copy)] → [pptxgenjs renderer] → [.pptx]
+[JSON data] → [Template] → [LLM (structure + copy)] → [pptxgenjs] → [.pptx]
 ```
+
+## Why SlideCraft?
+
+- **🔌 Embed in your app** — SDK, not a SaaS. Install, import, generate.
+- **🤖 10 LLM providers** — OpenAI, Anthropic, Gemini, Mistral, Groq, DeepSeek, Together, Perplexity, xAI, Cohere
+- **🎛️ 4 levels of control** — from "LLM decides everything" to "no LLM at all"
+- **📊 Charts & tables** — bar, line, pie, doughnut charts + data tables out of the box
+- **🎨 Custom templates** — use built-in or register your own brand colors/fonts
+- **📦 Zero config** — just add your API key and go
 
 ## Installation
 
@@ -23,8 +41,9 @@ const sc = new SlideCraft({
   llm: { provider: 'openai', apiKey: process.env.OPENAI_API_KEY! }
 })
 
+// Pass your data, get a presentation
 const pptx = await sc.generate({
-  data: { company: 'Acme', revenue: 2_400_000 },
+  data: { company: 'Acme', revenue: 2_400_000, growth: '23%' },
   instructions: 'Quarterly business review for leadership'
 })
 
@@ -35,137 +54,129 @@ const buffer = await pptx.toBuffer()
 
 ## 4 Levels of Control
 
-SlideCraft's `.generate()` method supports 4 levels of control, from fully automatic to fully manual:
-
 ### Level 1 — LLM decides everything
 
-Pass your data and instructions. The LLM decides how many slides, what layouts, and all content.
+Just pass data and instructions. The LLM decides slide count, layouts, and content.
 
 ```typescript
 const pptx = await sc.generate({
-  data: salesJson,
-  instructions: 'Resumen Q4 para directivos'
+  data: crmData,
+  instructions: 'Executive sales report for Q4'
 })
 ```
 
-### Level 2 — Fixed slide count, LLM fills content
+### Level 2 — Fixed slide count
 
-You set the exact number of slides. The LLM generates that many.
+You set how many slides. The LLM fills them.
 
 ```typescript
 const pptx = await sc.generate({
-  data: salesJson,
+  data: crmData,
   slides: 8,
-  instructions: 'Enfócate en crecimiento'
+  instructions: 'Focus on growth and retention'
 })
 ```
 
-### Level 3 — User defines each slide
+### Level 3 — Define each slide
 
-You define every slide's blueprint (title, layout, chart type, data key, per-slide instructions). The LLM generates the actual content for each one.
+You define every slide's blueprint. The LLM generates content for each one.
 
 ```typescript
 const pptx = await sc.generate({
-  data: salesJson,
+  data: crmData,
   slides: [
-    { title: 'Resumen Ejecutivo', layout: 'title', instructions: 'KPIs principales' },
-    { title: 'Ventas por Región', layout: 'chart', chartType: 'bar', dataKey: 'sales_by_region' },
-    { title: 'Top Clientes', layout: 'table', dataKey: 'top_clients' },
-    { title: 'Proyección Q1', instructions: 'Genera forecast basado en tendencia' }
+    { title: 'Executive Summary', layout: 'title', instructions: 'Main KPIs' },
+    { title: 'Revenue by Region', layout: 'chart', chartType: 'bar', dataKey: 'by_region' },
+    { title: 'Top Clients', layout: 'table', dataKey: 'top_clients' },
+    { title: 'Q1 Forecast', instructions: 'Generate forecast from trend data' }
   ]
 })
 ```
 
-**SlideSpec fields** (all optional):
+### Level 4 — No LLM
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `title` | `string` | Slide title (LLM generates one if omitted) |
-| `layout` | `SlideLayout` | Preferred layout |
-| `chartType` | `ChartType` | Chart type when layout is `'chart'` |
-| `dataKey` | `string` | Key path into data to use for this slide |
-| `instructions` | `string` | Per-slide instructions for the LLM |
-| `content` | `string[]` | Direct content (used in Level 4) |
-
-### Level 4 — No LLM, direct render
-
-No LLM call at all. You provide everything, SlideCraft just renders the `.pptx`.
+Zero API calls. You provide everything, SlideCraft just renders the `.pptx`.
 
 ```typescript
 const pptx = await sc.generate({
   slides: [
-    { title: 'Revenue', content: ['$2.5M revenue', '+23% YoY'], layout: 'bullets' },
-    { title: 'Team', content: ['85 employees', '5 new markets'], layout: 'bullets' },
+    { title: 'Revenue', content: ['$2.5M total', '+23% YoY'], layout: 'bullets' },
     { title: 'Thank You', layout: 'closing' }
   ],
   llm: false
 })
 ```
 
-## Configuration
+## LLM Providers
 
-### SlideCraft Constructor
+Use any of 10 providers — just change `provider` and `apiKey`:
 
 ```typescript
-const sc = new SlideCraft({
-  llm: {
-    provider: 'openai',        // 'openai' | 'anthropic'
-    apiKey: 'sk-...',           // API key
-    model: 'gpt-4o',           // Optional: model override
-    baseURL: 'https://...',    // Optional: custom endpoint
-    temperature: 0.7,          // Optional: 0-2 (default: 0.7)
-  },
-  defaultTemplate: 'general',  // Optional: default template name
-  language: 'en',              // Optional: default language
-})
+// OpenAI
+{ provider: 'openai', apiKey: 'sk-...' }
+
+// Anthropic (Claude)
+{ provider: 'anthropic', apiKey: 'sk-ant-...' }
+
+// Google Gemini
+{ provider: 'gemini', apiKey: 'AIza...' }
+
+// Mistral
+{ provider: 'mistral', apiKey: '...' }
+
+// Groq
+{ provider: 'groq', apiKey: 'gsk_...' }
+
+// DeepSeek
+{ provider: 'deepseek', apiKey: '...' }
+
+// Together AI
+{ provider: 'together', apiKey: '...' }
+
+// Perplexity
+{ provider: 'perplexity', apiKey: 'pplx-...' }
+
+// xAI (Grok)
+{ provider: 'xai', apiKey: 'xai-...' }
+
+// Cohere
+{ provider: 'cohere', apiKey: '...' }
 ```
 
-### LLM Providers
-
-**OpenAI:**
-```typescript
-{ provider: 'openai', apiKey: 'sk-...', model: 'gpt-4o' }
-```
-
-**Anthropic** (via OpenAI-compatible API):
-```typescript
-{ provider: 'anthropic', apiKey: 'sk-ant-...', model: 'claude-sonnet-4-20250514' }
-```
-
-**Any OpenAI-compatible endpoint:**
-```typescript
-{ provider: 'openai', apiKey: '...', baseURL: 'https://your-proxy.com/v1' }
-```
-
-## Generate Options
+Each provider has a pre-configured `baseURL` and default model. Override with `model` and `baseURL`:
 
 ```typescript
-interface GenerateOptions {
-  data?: unknown                      // Input data (required for levels 1-3)
-  template?: string | TemplateConfig  // Template name or custom config
-  slides?: number | SlideSpec[]       // Level 2: count, Level 3: specs
-  instructions?: string               // Natural language instructions
-  language?: string                   // Override language
-  llm?: false                         // Set to false for Level 4
+{
+  provider: 'openai',
+  apiKey: 'sk-...',
+  model: 'gpt-4o-mini',           // cheaper model
+  baseURL: 'https://my-proxy/v1',  // custom endpoint
+  temperature: 0.5                  // less creative
 }
 ```
 
-## Built-in Templates
+## Templates
 
-| Template | Description | Charts? |
-|----------|-------------|---------|
-| `general` | Clean, versatile template for any topic | No |
-| `sales-report` | Data-driven with emphasis on metrics, KPIs, trends | Yes |
-| `executive` | Premium minimalist for board/C-suite presentations | Yes |
+### Built-in
+
+| Template | Style | Charts | Max Slides |
+|----------|-------|--------|------------|
+| `general` | Clean, neutral (Calibri) | No | 15 |
+| `sales-report` | Data-driven, blue/red (Arial) | Yes | 12 |
+| `executive` | Premium dark, minimalist (Georgia) | Yes | 10 |
+
+```typescript
+await sc.generate({ data, template: 'executive', instructions: '...' })
+```
 
 ### Custom Templates
 
 ```typescript
-import { registerTemplate, type TemplateConfig } from 'slidecraft'
+import { registerTemplate } from 'slidecraft'
 
-const myTemplate: TemplateConfig = {
+registerTemplate('brand', {
   name: 'brand',
-  description: 'Our brand template',
+  description: 'Our company template',
   colors: {
     primary: '1A1A2E',
     secondary: '16213E',
@@ -178,71 +189,83 @@ const myTemplate: TemplateConfig = {
   preferredLayouts: ['title', 'title-content', 'chart', 'closing'],
   maxSlides: 12,
   preferCharts: true,
-}
+})
 
-registerTemplate('brand', myTemplate)
-
-// Use by name
 await sc.generate({ data, template: 'brand', instructions: '...' })
-
-// Or pass inline
-await sc.generate({ data, template: myTemplate, instructions: '...' })
 ```
 
 ## Slide Layouts
 
 | Layout | Description |
 |--------|-------------|
-| `title` | Title slide with big title + subtitle |
+| `title` | Big title + subtitle |
 | `title-content` | Title bar + bullets or body text |
-| `bullets` | Alias for `title-content` — bullet list |
-| `two-column` | Title + two columns (comparisons) |
+| `bullets` | Alias for `title-content` |
+| `two-column` | Side-by-side comparison |
 | `section-header` | Section divider |
-| `chart` | Title + chart (bar, line, pie, doughnut) |
-| `table` | Title + data table (headers + rows) |
-| `closing` | Closing slide (thank you / Q&A) |
+| `chart` | Bar, line, pie, or doughnut chart |
+| `table` | Data table with headers + rows |
+| `closing` | Thank you / Q&A |
 | `blank` | Empty slide |
 
-## Chart Support
+## Charts & Tables
 
-When your data contains numeric series, the LLM can generate charts. In Level 3, you can specify the chart type per slide:
+Charts are generated automatically when your data has numeric series:
 
 ```typescript
-{ title: 'Revenue Trend', layout: 'chart', chartType: 'line', dataKey: 'monthly_revenue' }
+// Level 3 — specify chart type per slide
+{ layout: 'chart', chartType: 'bar', dataKey: 'monthly_revenue' }
+{ layout: 'chart', chartType: 'pie', dataKey: 'market_share' }
 ```
 
-Supported: `bar`, `line`, `pie`, `doughnut`.
+Supported: `bar` · `line` · `pie` · `doughnut`
 
-## Table Support
-
-For tabular data (rankings, comparisons), use the `table` layout:
+Tables work similarly:
 
 ```typescript
-// Level 3 — LLM generates the table from your data
-{ title: 'Top Clients', layout: 'table', dataKey: 'clients' }
+{ layout: 'table', dataKey: 'top_clients', instructions: 'Show name, revenue, deals' }
+```
 
-// Level 4 — You provide the table directly (via renderPresentation)
+## Real-World Example: CRM Sales Data
+
+```typescript
+const sc = new SlideCraft({
+  llm: { provider: 'gemini', apiKey: process.env.GEMINI_API_KEY! },
+  language: 'es',
+})
+
+// Your CRM already has this data as JSON
+const salesReps = await fetch('/api/sales/reps').then(r => r.json())
+
+const pptx = await sc.generate({
+  data: salesReps,
+  template: 'sales-report',
+  slides: [
+    { title: 'Team Performance', layout: 'title' },
+    { title: 'Overview', layout: 'bullets', instructions: 'Total volume, accounts, UP vs DOWN trends' },
+    { title: 'Top 10 by Volume', layout: 'chart', chartType: 'bar' },
+    { title: 'Top 10 Detail', layout: 'table', instructions: 'Name, Volume YTD, LY, Variation %, Accounts' },
+    { title: 'Growth Reps', layout: 'two-column', instructions: 'UP reps on left, insights on right' },
+    { title: 'Declining Reps', layout: 'two-column', instructions: 'DOWN reps on left, actions on right' },
+    { title: 'Conclusions', layout: 'bullets' },
+    { title: 'Questions?', layout: 'closing' },
+  ],
+})
+
+await pptx.save('sales-report.pptx')
 ```
 
 ## Advanced: Direct Rendering
 
-Skip SlideCraft entirely and render from your own structure:
+Skip LLM entirely and render from your own structure:
 
 ```typescript
-import { renderPresentation, getTemplate, type PresentationStructure } from 'slidecraft'
+import { renderPresentation, getTemplate } from 'slidecraft'
 
-const structure: PresentationStructure = {
-  title: 'My Presentation',
+const result = renderPresentation({
+  title: 'My Deck',
   slides: [
     { title: 'Hello', layout: 'title', subtitle: 'World' },
-    {
-      title: 'Key Points',
-      layout: 'title-content',
-      bullets: [
-        { text: 'First point' },
-        { text: 'Second point', bold: true },
-      ],
-    },
     {
       title: 'Data',
       layout: 'table',
@@ -251,35 +274,56 @@ const structure: PresentationStructure = {
         rows: [['Revenue', '$2.5M'], ['Growth', '+23%']],
       },
     },
-    { title: 'Thank You', layout: 'closing' },
   ],
-}
+}, getTemplate('executive'))
 
-const result = renderPresentation(structure, getTemplate('executive'))
 await result.save('manual.pptx')
 ```
+
+## SlideSpec Reference
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `title` | `string` | Slide title (LLM generates if omitted) |
+| `layout` | `SlideLayout` | Preferred layout |
+| `chartType` | `ChartType` | `bar` · `line` · `pie` · `doughnut` |
+| `dataKey` | `string` | Key path into data for this slide |
+| `instructions` | `string` | Per-slide instructions for the LLM |
+| `content` | `string[]` | Direct bullet content (Level 4) |
+
+## GenerateOptions Reference
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `data` | `unknown` | — | Input data (JSON-serializable) |
+| `template` | `string \| TemplateConfig` | `'general'` | Template name or config |
+| `slides` | `number \| SlideSpec[]` | — | Level 2: count, Level 3: specs |
+| `instructions` | `string` | — | Natural language instructions |
+| `language` | `string` | `'en'` | Output language |
+| `maxSlides` | `number` | template default | Hint for LLM |
+| `llm` | `false` | — | Skip LLM (Level 4) |
 
 ## Output
 
 ```typescript
-interface GenerationResult {
-  save(filePath: string): Promise<void>    // Save to file
-  toBuffer(): Promise<Buffer>              // Get as buffer
-  structure: PresentationStructure         // The slide structure
-}
+const result = await sc.generate({ ... })
+
+await result.save('deck.pptx')           // Save to file
+const buffer = await result.toBuffer()    // Get as Buffer
+console.log(result.structure)             // Inspect slide structure
 ```
 
 ## Development
 
 ```bash
-git clone <repo>
+git clone https://github.com/jonathanst29/slidecraft.git
 cd slidecraft
 npm install
-npm run build      # Build ESM + CJS
-npm test           # Run tests
+npm run build      # ESM + CJS
+npm test           # 57 tests
 npm run typecheck  # Type checking
 ```
 
 ## License
 
-MIT
+MIT © [Jonathan Terán](https://x.com/jonathanst29)

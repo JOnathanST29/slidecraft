@@ -32,7 +32,13 @@ export {
   generalTemplate,
   salesReportTemplate,
   executiveTemplate,
+  modernTemplate,
+  corporateTemplate,
+  minimalTemplate,
 } from './templates/index.js'
+
+// Validation
+export { ValidationError } from './validation.js'
 
 // Renderer (for advanced usage)
 export { renderPresentation } from './renderer/index.js'

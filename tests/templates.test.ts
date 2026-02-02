@@ -15,7 +15,7 @@ describe('Templates', () => {
     expect(names).toContain('general')
     expect(names).toContain('sales-report')
     expect(names).toContain('executive')
-    expect(names).toHaveLength(3)
+    expect(names).toHaveLength(6)
   })
 
   it('should get template by name', () => {

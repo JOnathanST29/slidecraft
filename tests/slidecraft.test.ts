@@ -80,7 +80,7 @@ describe('SlideCraft — Level 4 (no LLM)', () => {
     const sc = new SlideCraft(config)
     await expect(
       sc.generate({ slides: 5, llm: false } as any),
-    ).rejects.toThrow('requires slides as an array')
+    ).rejects.toThrow('as an array, not a number')
   })
 
   it('should accept a custom template', async () => {
