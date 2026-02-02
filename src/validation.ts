@@ -30,7 +30,7 @@ export function validateGenerateOptions(options: GenerateOptions): void {
     }
     // Validate each slide has at minimum a title or content
     for (let i = 0; i < options.slides.length; i++) {
-      const slide = options.slides[i]
+      const slide = options.slides[i]!
       if (!slide.title && (!slide.content || slide.content.length === 0)) {
         throw new ValidationError(
           `Slide ${i + 1}: Level 4 slides need at least a "title" or "content" array.`
@@ -75,7 +75,7 @@ export function validateGenerateOptions(options: GenerateOptions): void {
       )
     }
     for (let i = 0; i < options.slides.length; i++) {
-      validateSlideSpec(options.slides[i], i + 1)
+      validateSlideSpec(options.slides[i]!, i + 1)
     }
   }
 
